@@ -1,0 +1,9 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+sqlalchemy>=2.0.0
+python-multipart>=0.0.5  # For file uploads
+jinja2>=3.1.0           # For HTML templates
+pypdf2>=3.0.0           # For reading PDF files
+python-docx>=1.1.0      # For reading DOCX files
+requests>=2.28.0        # Potentially useful, though using fetch API
+google-generativeai>=0.4.0 # For Gemini API access

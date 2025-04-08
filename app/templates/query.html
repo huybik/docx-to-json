@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Query Document</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+        max-width: 800px;
+        margin: auto;
+        background-color: #f4f4f4;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      .container {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+      }
+      input[type="file"] {
+        display: block;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: calc(100% - 22px);
+      }
+      button {
+        background-color: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+      #resultArea {
+        margin-top: 20px;
+      }
+      #resultJson {
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 15px;
+        white-space: pre-wrap; /* Preserve whitespace and wrap */
+        word-wrap: break-word; /* Break long words */
+        font-family: monospace;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      #errorMessage {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #721c24;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        display: none; /* Hidden by default */
+      }
+      .spinner {
+        border: 4px solid #f3f3f3; /* Light grey */
+        border-top: 4px solid #3498db; /* Blue */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block; /* Or 'none' initially */
+        margin-left: 10px;
+        vertical-align: middle;
+        display: none; /* Hidden by default */
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Query Document</h1>
+      <p>
+        Upload a document (PDF or DOCX) to extract information and generate JSON
+        using the trained examples and Gemini.
+      </p>
+
+      <form id="queryForm">
+        <div>
+          <label for="doc_file">Document File (PDF/DOCX):</label>
+          <input
+            type="file"
+            id="doc_file"
+            name="doc_file"
+            accept=".pdf,.docx"
+            required
+          />
+        </div>
+        <button type="submit" id="submitBtn">
+          Process Document
+          <div class="spinner" id="spinner"></div>
+        </button>
+      </form>
+    </div>
+
+    <div class="container" id="resultArea" style="display: none">
+      <h2>Generated JSON Output</h2>
+      <pre id="resultJson"><code></code></pre>
+      <div id="errorMessage"></div>
+    </div>
+
+    <div class="container">
+      <a href="/">Go back to Training Page</a>
+    </div>
+
+    <script>
+      const queryForm = document.getElementById("queryForm");
+      const resultArea = document.getElementById("resultArea");
+      const resultJsonPre = document
+        .getElementById("resultJson")
+        .querySelector("code");
+      const errorMessageDiv = document.getElementById("errorMessage");
+      const submitBtn = document.getElementById("submitBtn");
+      const spinner = document.getElementById("spinner");
+      const docFileInput = document.getElementById("doc_file");
+
+      queryForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        resultArea.style.display = "none"; // Hide previous results
+        errorMessageDiv.style.display = "none"; // Hide previous errors
+        errorMessageDiv.textContent = "";
+        resultJsonPre.textContent = "";
+        submitBtn.disabled = true;
+        spinner.style.display = "inline-block";
+
+        const formData = new FormData();
+        formData.append("doc_file", docFileInput.files[0]);
+
+        try {
+          const response = await fetch("/process_query", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json(); // Expecting JSON response
+
+          if (response.ok) {
+            // Display the generated JSON
+            resultJsonPre.textContent = JSON.stringify(result, null, 2); // Pretty print JSON
+            resultArea.style.display = "block";
+            errorMessageDiv.style.display = "none";
+          } else {
+            // Display error message from backend
+            errorMessageDiv.textContent = `Error: ${
+              result.detail ||
+              response.statusText ||
+              "Unknown error during processing"
+            }`;
+            errorMessageDiv.style.display = "block";
+            resultArea.style.display = "none";
+          }
+        } catch (error) {
+          console.error("Query Error:", error);
+          errorMessageDiv.textContent =
+            "An error occurred while querying. Check the console.";
+          errorMessageDiv.style.display = "block";
+          resultArea.style.display = "none";
+        } finally {
+          submitBtn.disabled = false;
+          spinner.style.display = "none";
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Train Model</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+        max-width: 800px;
+        margin: auto;
+        background-color: #f4f4f4;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      .container {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+      }
+      input[type="file"] {
+        display: block;
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: calc(100% - 22px);
+      } /* Adjust width for padding/border */
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+      #message {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .spinner {
+        border: 4px solid #f3f3f3; /* Light grey */
+        border-top: 4px solid #3498db; /* Blue */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block; /* Or 'none' initially */
+        margin-left: 10px;
+        vertical-align: middle;
+        display: none; /* Hidden by default */
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Upload Training Data</h1>
+      <p>
+        Upload a document (PDF or DOCX) and its corresponding JSON
+        representation.
+      </p>
+
+      <form id="uploadForm">
+        <div>
+          <label for="doc_file">Document File (PDF/DOCX):</label>
+          <input
+            type="file"
+            id="doc_file"
+            name="doc_file"
+            accept=".pdf,.docx"
+            required
+          />
+        </div>
+        <div>
+          <label for="json_file">JSON File (.json):</label>
+          <input
+            type="file"
+            id="json_file"
+            name="json_file"
+            accept=".json,application/json"
+            required
+          />
+        </div>
+        <button type="submit" id="submitBtn">
+          Upload Training Pair
+          <div class="spinner" id="spinner"></div>
+        </button>
+      </form>
+
+      <div id="message" style="display: none"></div>
+
+      <hr style="margin-top: 30px; margin-bottom: 20px" />
+      <a href="/query">Go to Query Page</a>
+    </div>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      const messageDiv = document.getElementById("message");
+      const submitBtn = document.getElementById("submitBtn");
+      const spinner = document.getElementById("spinner");
+      const docFileInput = document.getElementById("doc_file");
+      const jsonFileInput = document.getElementById("json_file");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault(); // Prevent default form submission
+
+        messageDiv.style.display = "none"; // Hide previous messages
+        messageDiv.className = ""; // Clear message classes
+        submitBtn.disabled = true;
+        spinner.style.display = "inline-block";
+
+        const formData = new FormData();
+        formData.append("doc_file", docFileInput.files[0]);
+        formData.append("json_file", jsonFileInput.files[0]);
+
+        try {
+          const response = await fetch("/upload_training_data", {
+            method: "POST",
+            body: formData,
+            // No 'Content-Type' header needed; browser sets it for FormData
+          });
+
+          const result = await response.json(); // Always try to parse JSON
+
+          if (response.ok) {
+            // Check status code (e.g., 200, 201)
+            messageDiv.textContent = result.message || "Upload successful!";
+            messageDiv.className = "success";
+            form.reset(); // Clear the form fields
+          } else {
+            // Handle errors (e.g., 400, 422, 500)
+            messageDiv.textContent = `Error: ${
+              result.detail || response.statusText || "Unknown error"
+            }`;
+            messageDiv.className = "error";
+          }
+        } catch (error) {
+          console.error("Upload Error:", error);
+          messageDiv.textContent =
+            "An error occurred during upload. Check the console.";
+          messageDiv.className = "error";
+        } finally {
+          messageDiv.style.display = "block"; // Show message area
+          submitBtn.disabled = false;
+          spinner.style.display = "none";
+        }
+      });
+    </script>
+  </body>
+</html>
